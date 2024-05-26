@@ -1,34 +1,49 @@
 /// <reference types="Cypress" />
 
-describe('Central de Atendimento ao Cliente TAT', function() { 
+describe('Central de Atendimento ao Cliente TAT', function() {
+  const THREE_SECOND_MS = 3000 
   this.beforeEach(function() {
-    cy.visit('./src/index.html')
+    cy.visit('./src/index.html')    
   })  
     it('verifica o título da aplicação', function() {  
           
       cy.title().should('be.equal', 'Central de Atendimento ao Cliente TAT')
     })
 
-    it('preenche os campos obrigatórios e envia o formulário', function(){
-      const longTest = 'teste, teste, teste, teste, teste, teste, teste, teste, teste, teste'
-
-      cy.get('#firstName').type('marcelo')
-      cy.get('#lastName').type('Carvalho')
-      cy.get('#email').type('marcelo.carvalho@hotmail.com')
-      cy.get('#open-text-area').type(longTest, {delay: 0})
-      cy.contains('button', 'Enviar').click()
-
-      cy.get('.success').should('be.visible')
+    Cypress._.times(2, function(){
+      it('Preenche os campos obrigatórios e envia o formulário', function(){
+        const longTest = 'teste, teste, teste, teste, teste, teste, teste, teste, teste, teste'
+        
+        cy.clock()
+        
+        cy.get('#firstName').type('marcelo')
+        cy.get('#lastName').type('Carvalho')
+        cy.get('#email').type('marcelo.carvalho@hotmail.com')
+        cy.get('#open-text-area').type(longTest, {delay: 0})
+        cy.contains('button', 'Enviar').click()
+  
+        cy.get('.success').should('be.visible')
+  
+        cy.tick(THREE_SECOND_MS)
+  
+        cy.get('.success').should('not.be.visible')
+      })
     })
 
-    it('exibe mensagem de erro ao submeter o formulário com um email com formatação inválida', function() {
+    it('Exibe mensagem de erro ao submeter o formulário com um email com formatação inválida', function() {
+      cy.clock()
+
       cy.get('#firstName').type('marcelo')
       cy.get('#lastName').type('Carvalho')
       cy.get('#email').type('marcelo.carvalho@hotmail,com')
       cy.get('#open-text-area').type('teste')
       cy.contains('button', 'Enviar').click()
 
-      cy.get('.error').should('be.visible')    
+      cy.get('.error').should('be.visible')
+      
+      cy.tick(THREE_SECOND_MS)
+
+      cy.get('.error').should('not.be.visible')
     })
 
     it('Campo telefone continua vazio quando preencin«gdo com valor-não numerico', function(){
@@ -37,7 +52,10 @@ describe('Central de Atendimento ao Cliente TAT', function() {
         .should('have.value', '')
     })
 
-    it('exibe mensagem de erro quando o telefone se torna obrigatório mas não é preenchido antes do envio do formulário', function(){
+    it('Exibe mensagem de erro quando o telefone se torna obrigatório mas não é preenchido antes do envio do formulário', function(){
+
+      cy.clock()
+
       cy.get('#firstName').type('marcelo')
       cy.get('#lastName').type('Carvalho')
       cy.get('#email').type('marcelo.carvalho@hotmail.com')
@@ -46,6 +64,11 @@ describe('Central de Atendimento ao Cliente TAT', function() {
       cy.contains('button', 'Enviar').click()
 
       cy.get('.error').should('be.visible')
+
+      cy.tick(THREE_SECOND_MS)
+
+      cy.get('.error').should('not.be.visible')
+      
 
     })
 
@@ -72,15 +95,29 @@ describe('Central de Atendimento ao Cliente TAT', function() {
           .should('have.value', '')
     })
 
-    it('exibe mensagem de erro ao submeter o formulário sem preencher os campos obrigatórios', function(){
+    it('Exibe mensagem de erro ao submeter o formulário sem preencher os campos obrigatórios', function(){
+      cy.clock()
+
       cy.contains('button', 'Enviar').click()
 
       cy.get('.error').should('be.visible')
+      
+      cy.tick(THREE_SECOND_MS)
+
+      cy.get('.error').should('not.be.visible')
+
     })
     it('envia o formuário com sucesso usando um comando customizado', function() {
+      
+      cy.clock()
+
       cy.fillMandatoryFieldsAndSubmit()
       
       cy.get('.success').should('be.visible')
+      
+      cy.tick(THREE_SECOND_MS)
+
+      cy.get('.success').should('not.be.visible')
     })
     
     it('seleciona um produto (YouTube) por seu texto', function() {
@@ -163,5 +200,51 @@ describe('Central de Atendimento ao Cliente TAT', function() {
         .click()
 
       //cy.contains('Talking About Testing').should('be.visible')        
+    })    
+
+    it('exibe e esconde as mensagens de sucesso e erro usando o .invoke()', function() {
+     cy.get('.success')
+      .should('not.be.visible')
+      .invoke('show')
+      .should('be.visible')
+      .and('contain', 'Mensagem enviada com sucesso.')
+      .invoke('hide')    
+      .should('not.be.visible')
+    cy.get('.error')
+      .should('not.be.visible')
+      .invoke('show')
+      .and('contain', 'Valide os campos obrigatórios!')
+      .should('be.visible')
+      .invoke('hide')
+      .should('not.be.visible')      
     })
+
+    it('preenche a area de texto usando o comando invoke', function() {
+      const longText = Cypress._.repeat('0123456789', 20)
+      
+      cy.get('#open-text-area')
+        .invoke('val', longText)
+        .should('have.value', longText)
+    })
+
+    it('faz uma requisição HTTP', function() {
+      cy.request('https://cac-tat.s3.eu-central-1.amazonaws.com/index.html')   
+        .should(function(response) {
+          const { status, statusText, body } = response
+          expect(status).to.equal(200)
+          expect(statusText).to.equal('OK')
+          expect(body).to.include('CAC TAT')
+        })      
+    })
+
+    it('Encontrar o Gato', function() {                              
+      cy.get('#cat')    
+        .should('not.be.visible')
+        .invoke('show')
+        .should('be.visible')
+      cy.get('#subtitle')
+        .invoke('text', 'Alegria 😀')
+      
+    })
+  
   }) 
